@@ -1,0 +1,37 @@
+gihub password -Monee@2001
+
+* create git repo in remote first and clone it in local repo ,make changes and push
+
+Step 1. Create the repository in git hub and copy link
+
+step 2.    "git clone link"
+if we get any error
+ "$ git config --global core.askpass"
+step 3.add files to git(paste folder in git local reposetrtey)
+use "git status' to check untracked files
+step 4:add files to git
+"git add ."
+step 5:git commit -m "messang"
+step 6 :git push orgin master
+
+
+
+
+
+
+
+...............................................................................................................................................
+
+* create a repo in local system and then push to required branch
+create a new repository on the command line
+echo "# react" >> README.md
+git init
+git add .
+git commit -m "first commit"
+git remote add origin https://github.com/yatheesha04/react.git
+git push -u origin master
+...................................................................................................................................
+
+*  add existing repo  in local  system to remote 
+git remote add origin https://github.com/yatheesha04/react.git
+git push -u origin master
