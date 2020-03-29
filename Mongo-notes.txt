@@ -1,0 +1,455 @@
+create folder mongo-works -> create db
+Navigate to db folder
+Type mongod --version
+If it works, cool
+If not, add to environment variables.
+
+MongoDB default port - 27017
+default should be /data/db
+
+If it isn't there, then you've to specify
+mongod --port 27017 --dbpath .
+Keep this terminal open
+
+In another cmd(can be anywhere), type mongo
+
+Commands
+->show dbs
+
+->use dbname
+
+->db (Shows current db)
+
+->Insert record
+db.emps.insert({empid:101,empname:"Harry",empsal:1234});
+db.emps.insert({empid:102,empname:"Peter",empsal:4873});
+db.emps.insert({empid:103,empname:"Katy",empsal:9290});
+db.emps.insert({empid:104,empname:"Ron",empsal:9823});
+
+->find records
+db.emps.find();  This is same as db.emps.find({});
+
+->Only one record
+db.emps.findOne();
+
+->In pretty form
+db.emps.find().pretty();
+
+->IMPORT data
+Can only import json and csv
+Make new file and add json contents
+{empid:110, empname:"Mayank", empsal:4455, empemail:"mayank@gmail.com"}
+{empid:111, empname:"Zubin", empsal:4455, empemail:"zubin@gmail.com"}
+{empid:112, empname:"Karteek", empsal:4455, empemail:"karteek@gmail.com"}
+{empid:113, empname:"Pavan", empsal:4455, empemail:"pavan@gmail.com"}
+
+Open NEW cmd and go to mongo-works folder
+mongoimport --help
+Explore this
+
+To import - 
+mongoimport --port 27017 --host localhost --db sapdb --collection emps --file ./sample.json
+
+To import array file - 
+mongoimport --port 27017 --host localhost --db sapdb --collection emps --file ./sample.json --jsonArray
+
+
+->EXPORT data
+Only into CSV or JSON format
+
+->mongoexport --port 27017 --host localhost --db sapdb --collection emps --fields empid,empname,empemail --out out.json
+
+->Pretty export
+mongoexport --port 27017 --host localhost --db sapdb --collection emps --fields empid,empname,empemail --out outPretty.json --pretty
+
+->Limited export
+mongoexport --port 27017 --host localhost --db sapdb --collection emps --fields empid,empname,empemail --out outPrettyLimit.json --pretty --limit 5
+
+Day 4 - Mongodb
+
+We can use an Iterator variable to iterate through the collection 
+
+var itr = db.emps.find();
+while(itr.hasNext()){
+	var temp = itr.next();
+	print(temp);
+}
+
+Above code gives [object BSON].
+We need to specify which columns we want.
+Note: itr should be specified each time. It can be used only once, 
+it vanishes after that.
+
+
+var itr = db.emps.find();
+while(itr.hasNext()){
+	var temp = itr.next();
+	print(temp.empid +", "+temp.empname);
+}
+
+Above code gives output in the form 101, Harry
+
+//Finance dept wants only empid and empsal, but they want a new collection.
+//Answer: use insert instead of print
+var itr = db.emps.find();
+while(itr.hasNext()){
+	var temp = itr.next();
+	db.finance_emps.insert({empid:temp.empid,empsal:temp.empsal});
+}
+
+
+CREATE COLLECTION
+
+To create a collection with options, we can use db.collection.createCollection()
+Options - 
+capped - enables capped collection
+size - in bytes
+max - max number of records
+
+Example
+
+db.createCollection("cappedcol",{capped:true, size:1024, max:4})
+Test it - 
+db.cappedcol.insert({food:"pizza"});
+db.cappedcol.insert({food:"burger"});
+db.cappedcol.insert({food:"idly"});
+db.cappedcol.insert({food:"dosa"});
+db.cappedcol.insert({food:"bread"});
+
+When you insert the fifth record, it gets added, but the first column vanishes.
+
+Multiple records cna be added using one statement using array.
+
+
+FIND()
+
+different options are available
+
+//to hide a field assign it to 0 in the second parameter
+db.emps.find({}, {_id:0});
+
+//find emp with id=111
+db.emps.find({empid:111}, {_id:0});
+
+//find emps who get sal greater than 4455
+db.emps.find({empsal:{$gt:4455}}, {_id:0});
+
+//sorting based on a record. Use 1 for ascending. Use -1 for descending
+db.emps.find({empsal:{$gt:4455}}, {_id:0}).sort({empname:1});
+db.emps.find({empsal:{$gt:4455}}, {_id:0}).sort({empname:-1});
+
+//limit number
+db.emps.find({empsal:{$gt:4455}}, {_id:0}).sort({empname:1}).limit(2);
+
+//skip records and then print
+db.emps.find({empsal:{$gt:4455}}, {_id:0}).sort({empname:1}).skip(1).limit(2);
+
+//update
+db.emps.update({"empid":112},{$set:{empsal:8888}})
+
+--AND clause ( , )
+
+//find emps with id=112 AND sal greater than 4460
+db.emps.find({empid:112, empsal:{$gt:4460}}, {_id:0});
+
+--OR clause  ( $or )
+
+//find emps with id=112 OR sal greater than 4455
+db.emps.find({
+	$or:[
+		{empid:112},
+		{empsal:{$gt:4455}}
+	    ]
+	}, {_id:0});
+
+//rename field
+db.students.updateMany( {}, { $rename: { "nmae": "name" } } )
+db.users.updateMany( {}, { $rename: { "id": "userid" } } )
+EMBEDDED DOCUMENTS
+
+db.embed.insert({
+	custid:101,
+	name:{
+		fName:"Harry",
+		lName:"Styles"
+	},
+	address:{
+		city:"Bengaluru",
+		street:"Vijaynagar",
+		state:"Karnataka",
+		country:"India"
+	}
+});
+	
+db.embed.insert({
+	custid:102,
+	name:{
+		fName:"Megan",
+		lName:"Tom"
+	},
+	address:{
+		city:"London",
+		street:"Cross",
+		country:"UK"
+	},
+	income:3322
+});
+
+
+//to find 
+Note: Need to use " for field names also(when . is uses)
+db.embed.find({"address.country":"UK"}).pretty()
+
+
+ARRAYS
+
+db.food.insert({name:"burger", cost:80, ratings:[6,7,8]});
+db.food.insert({name:"pizza", cost:90, ratings:[6,7,8,4]});
+db.food.insert({name:"pasta", cost:100, ratings:[4]});
+db.food.insert({name:"juice", cost:30, ratings:[8,9,10]});
+
+//exact match (use square brackets)
+db.food.find({ratings:[4]})
+
+//index based match (all records with 6 in the first index of ratings
+db.food.find({"ratings.0":6},{_id:0})
+
+//anywhere match (don't use square brackets)
+db.food.find({"ratings":8},{_id:0})
+
+//conditional match (use $elemMatch) - ratings greater than 9
+db.food.find({ratings:{$elemMatch:{$gt:9}}}, {_id:0})
+
+
+UPDATE
+
+//update matches one record only
+db.emps.update({},{$set:{state:"Karnataka"}});
+
+//to match multiple   ( use multi:true )
+db.emps.update({},{$set:{state:"Karnataka"}}, {multi:true});
+
+db.emps.update({},{$set:{country:"India"}});
+//match people who don't have country as a field and then update them  (use $exists)
+db.emps.update({country:{$exists:false}},{$set:{country:"India"}}, {multi:true});
+
+//upsert (insert with update)
+db.emps.update({empname:"Sachin"},{$set:{empsal:1234,empemail:"sachin@gmail.com"}})
+Above command will not update anything. Now try with upsert:true
+
+db.emps.update({empname:"Sachin"},{$set:{empsal:1234,empemail:"sachin@gmail.com"}},{upsert:true})
+Now the record is added.
+
+
+SAVE
+Updates an existing document or inserts a new document, 
+depending on its document parameter.
+1. If _id is matched - it will update
+2. If you give _id if not matched - it will update
+3. If you don't give _id - insert
+
+db.emps.save({empname:"Azar", empsal:3344});
+
+CHECK OUT SAVE -  docs.mongo
+
+
+INDEXES
+
+function -  createIndex()
+
+first import huge db
+
+Note: To find execution stat - 
+db.pop.find({pop:{$gt:1200}}).explain("executionStats")
+
+//createIndex
+db.pop.createIndex({pop:1});
+
+db.pop.getIndexes()
+
+db.pop.stats()
+
+--pop, city
+db.pop.createIndex({pop:1, city:1});      //ascending city
+db.pop.createIndex({pop:1, city:-1});	  //descending city
+//MongoDB won't knoww hat to use. It was use whatever it thinks is better. 
+But what if we want to tell what we want it to use?
+
+db.pop.find({pop:{$gt:4000}, city:"CHESTER"}).explain("executionStats");
+//In this command, mongoDB will use any one, randomly
+
+Use HINT
+db.pop.find({pop:{$gt:4000}, city:"CHESTER"}).hint({pop:1, city:1}).explain("executionStats");
+
+
+
+//Write a for loop to insert million records 
+for(i=0;i<1000000;i++)
+{
+	db.new.insert({empid:1111,empname:"Sanjana"});
+}
+
+mongostat
+
+mongotop
+
+
+PRIMARY KEY FOR MONGO
+
+USE UNIQUE INDEX
+When this is used, duplicate entries canoot be created
+
+db.new.createIndex({empid:1},{unique:true});
+
+db.new.insert({empid:101,empname:"Harry",empsal:1234});
+db.new.insert({empid:102,empname:"Peter",empsal:4873});
+db.new.insert({empid:103,empname:"Katy",empsal:9290});
+db.new.insert({empid:104,empname:"Ron",empsal:9823});
+
+Now, duplicate entries for empid will not be allowed.
+
+
+SPARSE INDEX
+to ensure that some fields are present in all records
+
+db.marks.insert({name:"Sharath", marks:77});
+db.marks.insert({name:"Pawan", marks:80});
+db.marks.insert({name:"Preeti", marks:90});
+db.marks.insert({name:"Mayank", marks:79});
+db.marks.insert({name:"Prerana", marks:91});
+db.marks.insert({name:"Sharath"});
+
+db.marks.find().sort({marks:1}) //this will show second sharath but it ideally should not.
+//We use sparse to solve this
+
+db.marks.createIndex({marks:1}, {sparse:true});
+After doing this, we need to specify hint
+
+db.marks.getIndexes()   //use the appropriate index
+{
+                "v" : 2,
+                "key" : {
+                        "marks" : 1
+                },
+                "name" : "marks_1",
+                "ns" : "sapdb.marks",
+                "sparse" : true
+        }
+
+db.marks.find().sort({marks:1}).hint({marks:1}); 
+//this works. Second sharath without marks will not come
+
+
+GEOSPATIAL INDEX
+gives records close to the point specified
+
+db.pop.findOne()
+{
+        "_id" : "01011",
+        "city" : "CHESTER",
+        "loc" : [
+                -72.988761,
+                42.279421
+        ],
+        "pop" : 1688,
+        "state" : "MA"
+}
+
+db.pop.createIndex({loc:'2d', city:1})
+
+db.marks.getIndexes() 
+	{
+                "v" : 2,
+                "key" : {
+                        "loc" : "2d",
+                        "city" : 1
+                },
+                "name" : "loc_2d_city_1",
+                "ns" : "sapdb.pop"
+        }
+
+
+db.pop.find({loc:{$near:[72,40]}}).limit(20)
+//places close to CHESTER will come
+
+CHECK OUT GEOSPHERE INDEXES 
+
+TEXT INDEXES
+
+db.sentence.insert({"words":"dog"});
+db.sentence.insert({"words":"dog cat"});
+db.sentence.insert({"words":"cat dog"});
+db.sentence.insert({"words":"dog tree cat running"});
+db.sentence.insert({"words":"its always good to havea dog"});
+db.sentence.insert({"words":"dogs and cats play "});
+db.sentence.insert({"words":"cat kills rat"});
+db.sentence.insert({"words":"cat is cute"});
+db.sentence.insert({"words":"dog snouser"});
+
+//Put index on words with text
+db.sentence.createIndex({"words":"text"});
+
+Now it will search (but not exactly, kind of like google search, not really))
+db.sentence.find({$text:{$search:'snouser.'}})
+
+db.sentence.find({$text:{$search:'cute'}})
+
+db.sentence.find({$text:{$search:'dog.'}})
+
+//with score
+
+db.sentence.find({
+$text:{
+ $search:'hello cat & dog'
+}
+}, {score:{
+ $meta:'textScore'
+}
+}).sort({score:{$meta:'textScore'}}) 
+
+
+NOTE: Cannot modify indexes. Drop it and create it again instead
+
+db.accounts.dropIndex( { "tax-id": 1 } )
+
+
+Get all the indexes of the DB
+
+db.getCollectionNames().forEach(function(collection) {
+ indexes = db[collection].getIndexes();
+ print("Indexes for " + collection + ":");
+ printjson(indexes);
+});
+
+//Lists all indexes of the DB
+
+ 
+
+AGGREGATE
+
+GROUP and MATCH
+
+db.pop.aggregate( [
+ { $group: { _id: "$state", totalPop: { $sum:
+"$pop" } } },
+ { $match: { totalPop: { $gte: 10*1000*1000 } } }
+] )
+
+
+
+CHECK OUT MAP REDUCE ALSOO
+
+
+MONGO COMPASS - check it out
+
+
+
+
+  /-------------/\
+ /\/\/\/\/\/\/\/\/\
+/   O        O	   \
+\        |         /
+ \  \_________/   /
+  \______________/ 
+   
+
